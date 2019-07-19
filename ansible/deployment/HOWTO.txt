@@ -1,0 +1,18 @@
+Requirements (commands for Ubuntu systems):
+
+1. Install Ansible:
+   sudo apt-add-repository ppa:rquillo/ansible
+   sudo apt-get update
+   sudo apt-get install ansible
+2. Install OpenStack compute:
+   sudo apt-get install nova-compute
+   and/or?
+   sudo apt-get install python-novaclient
+
+
+To run a simulation:
+
+1. Modify "backend/openstack_config.yml"
+2. Modify "image_config.yml"
+3. Execute "run.sh"
+

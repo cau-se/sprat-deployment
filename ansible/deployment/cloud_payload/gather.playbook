@@ -1,0 +1,17 @@
+---
+- hosts: slaves
+  user: "{{ s_user }}"
+  vars_files:
+    - image_config.yml
+  
+  tasks:
+  - name: Get output file names
+    shell: chdir={{ s_home_dir }}/ ls ./simulation/output/
+    register: s_slave_output_files
+  
+  #- debug: var=s_slave_output_files
+  
+  - name: Download result files
+    fetch: validate_md5=no src={{ s_home_dir }}/simulation/output/{{ item }} dest={{ s_home_dir }}/simulation/output/
+    with_items: s_slave_output_files.stdout_lines
+    

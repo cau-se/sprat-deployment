@@ -1,0 +1,72 @@
+---
+- hosts: master
+  user: "{{ s_user }}"
+  #sudo_user: "{{ s_sudo_user }}"
+  vars_files:
+    - ./image_config.yml
+    
+  tasks:
+  
+#  - debug: var=groups['master'][0]
+  
+  
+  - name: Ensure that Ansible and simulation directories are present
+    file: path={{ s_home_dir }}/{{ item }} state=directory
+    with_items:
+      - ansible
+      - simulation
+      - simulation/src-gen
+      - simulation/pdedsl
+      - simulation/output
+  
+  
+  - name: Upload Ansible payload
+    copy: force=yes src={{ item }} dest={{ s_home_dir }}/ansible/
+    with_items:
+      - ./gen/
+      - ./cloud_payload/
+      - image_config.yml
+    
+  
+  - name: Upload main simulation code
+    copy: force=yes src={{ item }} dest={{ s_home_dir }}/simulation/
+    with_fileglob:
+      - ../*.hpp
+      - ../*.cpp
+      - ../makefile
+  
+  - name: Upload generated simulation code
+    copy: force=yes src={{ item }} dest={{ s_home_dir }}/simulation/src-gen/
+    with_fileglob:
+      - ../src-gen/*.hpp
+      - ../src-gen/*.cpp
+  
+  - name: Upload Sprat PDE DSL code
+    copy: force=yes src={{ item }} dest={{ s_home_dir }}/simulation/pdedsl/
+    with_fileglob:
+      - ../pdedsl/*.hpp
+      - ../pdedsl/*.cpp
+
+
+  - name: Clear simulation build objects
+    shell: chdir={{ s_home_dir }}/simulation rm *.o
+    ignore_errors: True
+  - name: Clear simulation build executable
+    shell: chdir={{ s_home_dir }}/simulation rm sim
+    ignore_errors: True
+
+  - name: Build simulation
+    shell: chdir={{ s_home_dir }}/simulation make
+#    ignore_errors: True
+
+  - name: Copy MPI hosts file
+    shell: chdir={{ s_home_dir }}/ansible cp payload_mpi_hosts ../simulation/mpi_hosts    
+  
+  - name: Configure /etc/hosts
+    shell: chdir={{ s_home_dir }}/ansible sudo cp payload_hosts /etc/hosts
+  
+  
+#  - name: Run cloud playbook
+#    shell: chdir={{ s_home_dir }}/ ansible-playbook -i ansible/payload_ansible_hosts ansible/distribute_and_run.playbook
+    
+  

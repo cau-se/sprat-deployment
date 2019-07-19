@@ -1,0 +1,74 @@
+---
+- hosts: localhost
+  connection: local
+  vars_files:
+    - ./openstack_config.yml
+    - ../image_config.yml
+    
+  tasks:
+  - name: Get image ID
+    shell: ./nova_helper.sh {{ os_auth_url }} {{ os_tenant_name }} {{ os_user }} {{ os_pw }} image {{ s_image_name }}
+    register: s_image_id
+  
+  - name: Get flavor ID
+    shell: ./nova_helper.sh {{ os_auth_url }} {{ os_tenant_name }} {{ os_user }} {{ os_pw }} flavor {{ s_flavor_name }}
+    register: s_flavor_id
+    
+#  - debug: var=s_image_id.stdout
+#  - debug: var=s_flavor_id.stdout
+    
+  - name: Make sure the instances are running
+    nova_compute:
+      state: present
+      auth_url: "{{ os_auth_url }}"
+      login_username: "{{ os_user }}"
+      login_password: "{{ os_pw }}"
+      login_tenant_name: "{{ os_tenant_name }}"
+      name: sprat{{item}}
+      image_id: "{{ s_image_id.stdout }}"
+      key_name: "{{ s_key_name }}"
+      wait_for: 600
+      flavor_id: "{{ s_flavor_id.stdout }}"
+      meta:
+        hostname: sprat{{ item }}
+    with_sequence: start=1 end={{ s_n_instances }}
+    register: os_vm_data
+
+#  - debug: var=os_vm_data
+#  - debug: var=os_vm_data.results[0].changed
+  
+  - name: Get unassigned floating IP
+    shell: ./nova_helper.sh {{ os_auth_url }} {{ os_tenant_name }} {{ os_user }} {{ os_pw }} getip
+    register: s_floating_ip
+    when: os_vm_data.results[0].changed == True
+    
+#  - debug: var=s_floating_ip.stdout
+ 
+  - name: Assign floating IP
+    shell: ./nova_helper.sh {{ os_auth_url }} {{ os_tenant_name }} {{ os_user }} {{ os_pw }} setip sprat1 {{ s_floating_ip.stdout }}
+    when: os_vm_data.results[0].changed == True
+
+
+
+  - name: Ensure that gen directory is present
+    file: path=../gen state=directory
+  - name: Create hosts file for playload
+    template: src=./{{ item.src }} dest=../gen/{{ item.dest }}
+    with_items:
+    - { src: 'pahosts.j2', dest: 'payload_ansible_hosts' }
+    - { src: 'phosts.j2', dest: 'payload_hosts' }
+    - { src: 'pmpihosts.j2', dest: 'payload_mpi_hosts' }
+    - { src: 'run_cloud_playbook.j2', dest: 'run_cloud_playbook.sh' }
+  - name: Ensure that cloud bootstrap script is executable
+    file: path=../gen/run_cloud_playbook.sh mode=0755
+  
+  
+  - name: Remove master from known hosts
+    shell: chdir=~ ssh-keygen -f "./.ssh/known_hosts" -R {% if os_vm_data.results[0].changed == True %}{{ s_floating_ip.stdout }}{% else %}{{ os_vm_data.results[0].info["addresses"].vmnet[1].addr }}{% endif %}
+    ignore_errors: True
+    when: os_vm_data.results[0].changed == True
+  
+  
+ 
+ 
+

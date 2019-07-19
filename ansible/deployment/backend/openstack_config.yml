@@ -1,0 +1,13 @@
+---
+os_auth_url: http://192.168.48.30:5000/v2.0
+os_tenant_name: Sprat
+os_user: user
+os_pw: password
+
+s_n_instances: 3
+    
+s_image_name: ubuntu1404_mpi_boost
+s_flavor_name: full.server
+s_key_name: grossman
+s_security_group: default
+

@@ -1,0 +1,25 @@
+---
+- hosts: slaves
+  user: "{{ s_user }}"
+  vars_files:
+    - ./image_config.yml
+  
+  tasks:
+  - name: Ensure that simulation directory is present
+    file: dest={{ s_home_dir }}/simulation state=directory
+  - name: Ensure that data directory is present
+    file: dest={{ s_home_dir }}/simulation/output state=directory
+  
+  - name: Copy hosts file
+    copy: force=yes src=payload_hosts dest={{ s_home_dir }}/
+  - name: Configure /etc/hosts
+    shell: chdir={{ s_home_dir }}/ sudo cp payload_hosts /etc/hosts
+  
+  - name: Copy simulation binary
+    copy: force=yes src={{ s_home_dir }}/simulation/sim dest={{ s_home_dir }}/simulation/
+  - name: Make sure simulation binary is executable
+    file: path={{ s_home_dir }}/simulation/sim mode=0755
+  
+#  - name: Execute simulation
+#    local_action: shell chdir={{ s_home_dir }}/simulation mpirun --hostfile mpi_hosts ./sim
+    

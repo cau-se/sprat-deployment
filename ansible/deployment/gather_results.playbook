@@ -1,0 +1,17 @@
+---
+- hosts: master
+  user: "{{ s_user }}"
+  vars_files:
+    - ./image_config.yml
+    
+  tasks:
+  - name: Get output file names
+    shell: chdir={{ s_home_dir }}/ find ./simulation/output/ -type f
+    register: s_output_files
+  
+  #- debug: var=s_output_files
+  
+  - name: Download result files from master node
+    fetch: validate_md5=no src={{ item }} dest=./results/
+    with_items: s_output_files.stdout_lines
+    

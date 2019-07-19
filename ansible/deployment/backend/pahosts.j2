@@ -1,0 +1,16 @@
+
+[master]
+{% if os_vm_data.results[0].changed == True %}
+{{ s_floating_ip.stdout }}
+{% else %}
+{{ os_vm_data.results[0].info["addresses"].vmnet[1].addr }}
+{% endif %}
+
+[slaves]
+{% for item in os_vm_data.results %}
+{% if loop.first == False %}
+{{ item.info.addresses.vmnet[0].addr }}
+{% endif %}
+{% endfor %}
+
+

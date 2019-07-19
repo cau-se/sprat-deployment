@@ -1,0 +1,25 @@
+---
+- hosts: localhost
+  connection: local
+  vars_files:
+    - ./openstack_config.yml
+    
+  tasks:
+  - name: Terminate instances
+    nova_compute:
+      state: absent
+      auth_url: "{{ os_auth_url }}"
+      login_username: "{{ os_user }}"
+      login_password: "{{ os_pw }}"
+      login_tenant_name: "{{ os_tenant_name }}"
+      name: sprat{{item}}
+      wait_for: 600
+    with_sequence: start=1 end={{ s_n_instances }}
+    register: os_vm_data
+
+#  - debug: var=os_vm_data
+#  - debug: var=os_vm_data.results[0].changed
+  
+ 
+ 
+

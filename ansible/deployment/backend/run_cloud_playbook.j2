@@ -1,0 +1,6 @@
+#!/bin/bash
+
+ssh {{ s_user }}@{% if os_vm_data.results[0].changed == True %}{{ s_floating_ip.stdout }}{% else %}{{ os_vm_data.results[0].info["addresses"].vmnet[1].addr }}{% endif %} ansible-playbook -i ./ansible/payload_ansible_hosts ./ansible/distribute_and_run.playbook
+ssh {{ s_user }}@{% if os_vm_data.results[0].changed == True %}{{ s_floating_ip.stdout }}{% else %}{{ os_vm_data.results[0].info["addresses"].vmnet[1].addr }}{% endif %} mpirun -n {{ s_n_instances }} --hostfile ./simulation/mpi_hosts ./simulation/sim
+ssh {{ s_user }}@{% if os_vm_data.results[0].changed == True %}{{ s_floating_ip.stdout }}{% else %}{{ os_vm_data.results[0].info["addresses"].vmnet[1].addr }}{% endif %} ansible-playbook -i ./ansible/payload_ansible_hosts ./ansible/gather.playbook
+
